@@ -46,25 +46,7 @@ public class Server {
                      p.addLast(new HttpObjectAggregator(65536));
 
                      // 自作ハンドラ(簡単に"Hello from Netty!"を返す)
-                     p.addLast(new SimpleChannelInboundHandler<FullHttpRequest>() {
-                         @Override
-                         protected void channelRead0(ChannelHandlerContext ctx, FullHttpRequest req) {
-                             // HTTPのレスポンスを生成
-                             final FullHttpResponse response = new DefaultFullHttpResponse(
-                                     req.protocolVersion(),
-                                     HttpResponseStatus.OK
-                             );
-                             // レスポンスボディを設定
-                             response.content().writeBytes("Hello from Netty!\n".getBytes());
-                             // ヘッダを設定
-                             response.headers().set(HttpHeaderNames.CONTENT_TYPE, "text/plain; charset=UTF-8");
-                             response.headers().setInt(HttpHeaderNames.CONTENT_LENGTH,
-                                                       response.content().readableBytes());
-
-                             // クライアントへ書き込み＆フラッシュし、接続を閉じる
-                             ctx.writeAndFlush(response).addListener(ChannelFutureListener.CLOSE);
-                         }
-                     });
+                     p.addLast(new PersonHandler());
                  }
              })
              // キューのバックログサイズやチャンネルのオプションを指定する例
