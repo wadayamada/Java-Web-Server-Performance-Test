@@ -1,6 +1,5 @@
-FROM openjdk:11
-WORKDIR /app
-COPY src/main/java/Server.java /app/
-RUN javac Server.java
+FROM gradle:jdk21
+COPY . ./
+RUN ./gradlew installDist
 EXPOSE 8081
-CMD ["java", "Server"]
+CMD ["build/install/Java-Web-Server-Performance-Test/bin/Java-Web-Server-Performance-Test"]
