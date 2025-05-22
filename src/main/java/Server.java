@@ -1,80 +1,91 @@
-import java.io.IOException;
+import io.netty.bootstrap.ServerBootstrap;
+import io.netty.channel.ChannelFuture;
+import io.netty.channel.ChannelFutureListener;
+import io.netty.channel.ChannelHandlerContext;
+import io.netty.channel.ChannelInitializer;
+import io.netty.channel.ChannelOption;
+import io.netty.channel.ChannelPipeline;
+import io.netty.channel.EventLoopGroup;
+import io.netty.channel.SimpleChannelInboundHandler;
+import io.netty.channel.nio.NioEventLoopGroup;
+import io.netty.channel.socket.SocketChannel;
+import io.netty.channel.socket.nio.NioServerSocketChannel;
+import io.netty.handler.codec.http.DefaultFullHttpResponse;
+import io.netty.handler.codec.http.FullHttpRequest;
+import io.netty.handler.codec.http.FullHttpResponse;
+import io.netty.handler.codec.http.HttpHeaderNames;
+import io.netty.handler.codec.http.HttpObjectAggregator;
+import io.netty.handler.codec.http.HttpResponseStatus;
+import io.netty.handler.codec.http.HttpServerCodec;
 
-import org.eclipse.jetty.servlet.ServletContextHandler;
-import org.eclipse.jetty.servlet.ServletHolder;
+public class Server {
+    private final int port;
 
-import jakarta.servlet.http.HttpServlet;
-import jakarta.servlet.http.HttpServletRequest;
-import jakarta.servlet.http.HttpServletResponse;
-
-public final class Server {
-    public static void main(String[] args)
-            throws Exception {
-        final org.eclipse.jetty.server.Server server = new org.eclipse.jetty.server.Server(8081);
-
-        // コンテキストハンドラを作成
-        final ServletContextHandler context = new ServletContextHandler(ServletContextHandler.SESSIONS);
-        context.setContextPath("/");
-        server.setHandler(context);
-
-        // HelloServletを "/hello" にマッピング
-        context.addServlet(new ServletHolder(new PersonServlet()), "/");
-
-        // サーバー開始
-        server.start();
-        System.out.println("Jetty started on port 8081. Access http://localhost:8081/");
-
-        // メインスレッドをブロックして待機
-        server.join();
+    public Server(int port) {
+        this.port = port;
     }
 
-    // シンプルなServletの例
-    public static class PersonServlet extends HttpServlet {
-        @Override
-        protected void doGet(HttpServletRequest req, HttpServletResponse resp) throws IOException {
-            final var person = getPerson();
-            resp.setContentType("text/plain; charset=UTF-8");
-            resp.getWriter().println(person.name + ' ' + person.age + ' ' + person.description);
+    public void run() throws InterruptedException {
+        // ボスグループ(accept用)とワーカーグループ（リクエスト処理用）を作成
+        final EventLoopGroup bossGroup = new NioEventLoopGroup(1);
+        final EventLoopGroup workerGroup = new NioEventLoopGroup();
+        try {
+            // ServerBootstrapを設定
+            final ServerBootstrap b = new ServerBootstrap();
+            b.group(bossGroup, workerGroup)
+             .channel(NioServerSocketChannel.class) // NIOサーバーソケット
+             .childHandler(new ChannelInitializer<SocketChannel>() {
+                 @Override
+                 public void initChannel(SocketChannel ch) {
+                     // パイプラインにハンドラを登録
+                     final ChannelPipeline p = ch.pipeline();
+
+                     // HTTPリクエスト/レスポンスのエンコード・デコードを扱うハンドラ
+                     p.addLast(new HttpServerCodec());
+                     // HTTPリクエストを一つのフルメッセージにまとめる（POSTボディなど扱う場合に便利）
+                     p.addLast(new HttpObjectAggregator(65536));
+
+                     // 自作ハンドラ(簡単に"Hello from Netty!"を返す)
+                     p.addLast(new SimpleChannelInboundHandler<FullHttpRequest>() {
+                         @Override
+                         protected void channelRead0(ChannelHandlerContext ctx, FullHttpRequest req) {
+                             // HTTPのレスポンスを生成
+                             final FullHttpResponse response = new DefaultFullHttpResponse(
+                                     req.protocolVersion(),
+                                     HttpResponseStatus.OK
+                             );
+                             // レスポンスボディを設定
+                             response.content().writeBytes("Hello from Netty!\n".getBytes());
+                             // ヘッダを設定
+                             response.headers().set(HttpHeaderNames.CONTENT_TYPE, "text/plain; charset=UTF-8");
+                             response.headers().setInt(HttpHeaderNames.CONTENT_LENGTH,
+                                                       response.content().readableBytes());
+
+                             // クライアントへ書き込み＆フラッシュし、接続を閉じる
+                             ctx.writeAndFlush(response).addListener(ChannelFutureListener.CLOSE);
+                         }
+                     });
+                 }
+             })
+             // キューのバックログサイズやチャンネルのオプションを指定する例
+             .option(ChannelOption.SO_BACKLOG, 128)
+             .childOption(ChannelOption.SO_KEEPALIVE, true);
+
+            // ポートを指定してサーバーをバインドして起動
+            final ChannelFuture f = b.bind(port).sync();
+            System.out.println("Netty HTTP server started on port " + port);
+
+            // サーバーソケットが閉じられるまで待機
+            f.channel().closeFuture().sync();
+        } finally {
+            // シャットダウン処理
+            bossGroup.shutdownGracefully();
+            workerGroup.shutdownGracefully();
         }
     }
 
-    public static Person getPerson() {
-        return new Person();
-    }
-
-    public static class Person {
-        String name;
-        int age;
-        String description;
-
-        public Person() {
-            name = "WadaTakamichi";
-            age = 26;
-            description = "ぎおんしょうじゃのかねのこえ、しょぎょうむじょうのひびきあり。 " +
-                          "さらそうじゅのはなのいろ、 じょうしゃひっすいのことわりをあらわす。 " +
-                          "おごれるひともひさしからず、 ただはるのよのゆめのごとし。 " +
-                          "たけきものもついにはほろびぬ、 ひとえにかぜのまえのちりにおなじ。" +
-                          "とおくいちょうをとぶらえば、 しんのちょうこう、かんのおうもう、りょうのしゅうい、とうのろくさん、 "
-                          +
-                          "これらはみな、きゅうしゅせんこうのまつりごとにもしたがわず、 たのしみをきわめ、いさめをもおもいいれず、 "
-                          +
-                          "てんかのみだれんことをさとらずして、 みんかんのうれうるところをしらざつしかば、 ひさしからずしてぼうじにしものどもなり。"
-                          +
-                          "ちかくほんちょうをうかがうに、 じょうへいのまさかど、てんぎょうのすみとも、こうわのぎしん、へいじののぶより、 "
-                          +
-                          "これらはおごれるこころも、たけきこともみなとりどりにこそありしかども、まぢかくは、 " +
-                          "ろくはらのにゅうどう、さきのだいじょうだいじん、たいらのあそんきよもりこうともうししひとのありさま、 "
-                          +
-                          "つたえうけたまわるこそ、こころもことばもおよばれね。" +
-                          "そのせんぞをたずぬればかんむてんのうだいごのおうじ、 いっぽんしきぶきょうかずらはらしんのうくだいのこういん、さぬきのかみまさもりがまご、 "
-                          +
-                          "ぎょうぶきょうただもりのあそんのちゃくなんなり。 かのしんのうのみこ、たかみのおう、むかんむいにしてうせたまいぬ。 "
-                          +
-                          "そのみこ、たかもちのおうのとき、はじめてへいのしょうをたまわって、 かずさのすけになりたまいしより、たちまちにおうしをいでてじんしんにつらなる。 "
-                          +
-                          "そのこちんじゅふのしょうぐんよしもち、のちにはくにかとあらたむ。 くにかよりまさもりにいたるろくだいは、しょこくのずりょうたりしかども、 "
-                          +
-                          "てんじょうのせんせきをばいまだゆるされず。";
-        }
+    public static void main(String[] args) throws InterruptedException {
+        final int port = 8081;
+        new Server(port).run();
     }
 }
