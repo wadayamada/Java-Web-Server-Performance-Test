@@ -1,0 +1,18 @@
+plugins {
+    id 'java'
+    id 'application'
+}
+
+application {
+    mainClass = 'WebServer'
+}
+
+repositories { mavenCentral() }
+
+dependencies {
+    implementation 'org.eclipse.jetty:jetty-server:11.0.15'
+    implementation 'org.eclipse.jetty:jetty-servlet:11.0.15'
+    implementation 'jakarta.servlet:jakarta.servlet-api:6.0.0'
+}
+
+tasks.withType(JavaCompile) { options.encoding = 'UTF-8' }
