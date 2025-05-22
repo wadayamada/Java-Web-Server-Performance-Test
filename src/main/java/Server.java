@@ -1,6 +1,5 @@
 import java.io.IOException;
 
-import org.eclipse.jetty.server.Server;
 import org.eclipse.jetty.servlet.ServletContextHandler;
 import org.eclipse.jetty.servlet.ServletHolder;
 
@@ -8,10 +7,10 @@ import jakarta.servlet.http.HttpServlet;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
 
-public final class WebServer {
+public final class Server {
     public static void main(String[] args)
             throws Exception {
-        final Server server = new Server(8081);
+        final org.eclipse.jetty.server.Server server = new org.eclipse.jetty.server.Server(8081);
 
         // コンテキストハンドラを作成
         final ServletContextHandler context = new ServletContextHandler(ServletContextHandler.SESSIONS);
