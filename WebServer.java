@@ -41,8 +41,11 @@ public final class WebServer {
                 System.out.println("Header: " + header);
             }
 
+            final var person = getPerson();
+            System.out.println("Person: " + person);
+
             // 簡単なレスポンスを返却
-            final String body = "<h1>Hello from raw socket Java server</h1>";
+            final String body = person.name + ' ' + person.age;
             final String httpResponse = "HTTP/1.1 200 OK\r\n" +
                                         "Content-Type: text/html; charset=UTF-8\r\n" +
                                         "Content-Length: " + body.getBytes().length + "\r\n" +
@@ -62,6 +65,20 @@ public final class WebServer {
             } catch (IOException e) {
                 // ignore
             }
+        }
+    }
+
+    public static Person getPerson() {
+        return new Person();
+    }
+
+    public static class Person {
+        String name;
+        int age;
+
+        public Person() {
+            name = "John Doe";
+            age = 30;
         }
     }
 }
