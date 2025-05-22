@@ -16,7 +16,8 @@ public class PersonHandler extends SimpleChannelInboundHandler<FullHttpRequest> 
                 HttpResponseStatus.OK
         );
         // レスポンスボディを設定
-        response.content().writeBytes("Hello from Netty!\n".getBytes());
+        final var person = getPerson();
+        response.content().writeBytes((person.name + '\n' + person.age + '\n' + person.description + '\n').getBytes());
         // ヘッダを設定
         response.headers().set(HttpHeaderNames.CONTENT_TYPE, "text/plain; charset=UTF-8");
         response.headers().setInt(HttpHeaderNames.CONTENT_LENGTH,
@@ -24,5 +25,49 @@ public class PersonHandler extends SimpleChannelInboundHandler<FullHttpRequest> 
 
         // クライアントへ書き込み＆フラッシュし、接続を閉じる
         ctx.writeAndFlush(response).addListener(ChannelFutureListener.CLOSE);
+    }
+
+    public static class Person {
+        String name;
+        int age;
+        String description;
+
+        public Person(String name, int age, String description) {
+            this.name = name;
+            this.age = age;
+            this.description = description;
+        }
+    }
+
+    public static Person getPerson() {
+        return new Person(
+                "Takamichi Wada",
+                26,
+                "ぎおんしょうじゃのかねのこえ、しょぎょうむじょうのひびきあり。 " +
+                "さらそうじゅのはなのいろ、 じょうしゃひっすいのことわりをあらわす。 " +
+                "おごれるひともひさしからず、 ただはるのよのゆめのごとし。 " +
+                "たけきものもついにはほろびぬ、 ひとえにかぜのまえのちりにおなじ。" +
+                "とおくいちょうをとぶらえば、 しんのちょうこう、かんのおうもう、りょうのしゅうい、とうのろくさん、 "
+                +
+                "これらはみな、きゅうしゅせんこうのまつりごとにもしたがわず、 たのしみをきわめ、いさめをもおもいいれず、 "
+                +
+                "てんかのみだれんことをさとらずして、 みんかんのうれうるところをしらざつしかば、 ひさしからずしてぼうじにしものどもなり。"
+                +
+                "ちかくほんちょうをうかがうに、 じょうへいのまさかど、てんぎょうのすみとも、こうわのぎしん、へいじののぶより、 "
+                +
+                "これらはおごれるこころも、たけきこともみなとりどりにこそありしかども、まぢかくは、 " +
+                "ろくはらのにゅうどう、さきのだいじょうだいじん、たいらのあそんきよもりこうともうししひとのありさま、 "
+                +
+                "つたえうけたまわるこそ、こころもことばもおよばれね。" +
+                "そのせんぞをたずぬればかんむてんのうだいごのおうじ、 いっぽんしきぶきょうかずらはらしんのうくだいのこういん、さぬきのかみまさもりがまご、 "
+                +
+                "ぎょうぶきょうただもりのあそんのちゃくなんなり。 かのしんのうのみこ、たかみのおう、むかんむいにしてうせたまいぬ。 "
+                +
+                "そのみこ、たかもちのおうのとき、はじめてへいのしょうをたまわって、 かずさのすけになりたまいしより、たちまちにおうしをいでてじんしんにつらなる。 "
+                +
+                "そのこちんじゅふのしょうぐんよしもち、のちにはくにかとあらたむ。 くにかよりまさもりにいたるろくだいは、しょこくのずりょうたりしかども、 "
+                +
+                "てんじょうのせんせきをばいまだゆるされず。"
+        );
     }
 }
