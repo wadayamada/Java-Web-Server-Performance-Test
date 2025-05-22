@@ -16,6 +16,10 @@ public class PersonHandler extends SimpleChannelInboundHandler<FullHttpRequest> 
                 HttpResponseStatus.OK
         );
         // レスポンスボディを設定
+        for (var i = 0; i < 100; i++) {
+            final var p = getPerson();
+            System.out.println(p.name + '\n' + p.age + '\n' + p.description + '\n');
+        }
         final var person = getPerson();
         response.content().writeBytes((person.name + '\n' + person.age + '\n' + person.description + '\n').getBytes());
         // ヘッダを設定
