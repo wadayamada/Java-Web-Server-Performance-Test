@@ -5,6 +5,7 @@ plugins {
 
 application {
     mainClass = 'Server'
+    applicationDefaultJvmArgs = ['-Xlog:gc*:file=gc.log:time']
 }
 
 repositories { mavenCentral() }
