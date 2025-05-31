@@ -5,7 +5,7 @@ plugins {
 
 application {
     mainClass = 'Server'
-    applicationDefaultJvmArgs = ['-Xmx16384m', '-Xlog:gc*']
+    applicationDefaultJvmArgs = ['-Xlog:gc*', '-XX:+UseG1GC']
 }
 
 repositories { mavenCentral() }

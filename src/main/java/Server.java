@@ -38,7 +38,7 @@ public class Server {
                      p.addLast(new HttpObjectAggregator(65536));
 
                      // 自作ハンドラ(簡単に"Hello from Netty!"を返す)
-                     p.addLast(new PersonHandler());
+                     p.addLast(new PerseHandler());
                  }
              })
              // キューのバックログサイズやチャンネルのオプションを指定する例
@@ -48,6 +48,7 @@ public class Server {
             // ポートを指定してサーバーをバインドして起動
             final ChannelFuture f = b.bind(port).sync();
             System.out.println("Netty HTTP server started on port " + port);
+            System.out.println("version 5");
 
             // サーバーソケットが閉じられるまで待機
             f.channel().closeFuture().sync();

@@ -13,26 +13,37 @@ import io.netty.handler.codec.http.HttpResponseStatus;
 
 public class PersonHandler extends SimpleChannelInboundHandler<FullHttpRequest> {
     @Override
-    protected void channelRead0(ChannelHandlerContext ctx, FullHttpRequest req) {
+    protected void channelRead0(ChannelHandlerContext ctx, FullHttpRequest req) throws InterruptedException {
         // HTTPのレスポンスを生成
         final FullHttpResponse response = new DefaultFullHttpResponse(
                 req.protocolVersion(),
                 HttpResponseStatus.OK
         );
         // レスポンスボディを設定
-        final Runtime runtime = Runtime.getRuntime();
-        final long totalMem = runtime.totalMemory();
-        final long freeMem = runtime.freeMemory();
-        final long usedMem = totalMem - freeMem;
-        final long maxMem = runtime.maxMemory();
-        final NumberFormat format = NumberFormat.getInstance();
-        System.out.println(" Max Memory:   " + format.format(maxMem / (1024.0 * 1024.0)));
-        System.out.println(" Used Memory:  " + format.format(usedMem / (1024.0 * 1024.0)));
+        Runtime runtime = Runtime.getRuntime();
+        long totalMem = runtime.totalMemory();
+        long freeMem = runtime.freeMemory();
+        long usedMem = totalMem - freeMem;
+        long maxMem = runtime.maxMemory();
+        NumberFormat format = NumberFormat.getInstance();
+        System.out.println("start Max Memory:   " + format.format(maxMem / (1024.0 * 1024.0)));
+        System.out.println("start Used Memory:  " + format.format(usedMem / (1024.0 * 1024.0)));
+
+//        for (var i = 0; i < 10; i++) {
+//            final var person = getPerson();
+//        }
+        double val = 1.0;
+        for (int i = 0; i < 1000000; i++) {
+            val = Math.cos(val) * Math.sin(val) + 1.0;
+        }
+//        sleep(100);
         final var person = getPerson();
+        System.out.println(person);
         response.content().writeBytes(
                 (person.name + '\n' + person.age + '\n' + person.description + '\n').getBytes());
         for (var i = 0; i < person.friends.size(); i++) {
             final var friend = person.friends.get(i);
+//            System.out.println(friend);
             response.content().writeBytes(
                     (friend.name + '\n' + friend.age + '\n' + friend.description + '\n').getBytes());
         }
@@ -42,7 +53,20 @@ public class PersonHandler extends SimpleChannelInboundHandler<FullHttpRequest> 
                                   response.content().readableBytes());
         response.headers().set(HttpHeaderNames.CONNECTION, HttpHeaderValues.KEEP_ALIVE);
         // クライアントへ書き込み＆フラッシュ
+//        ctx.executor().schedule(() -> {
+//            // 実際のレスポンス送出処理
+//            // 例えば文字列レスポンスを返すなら
         ctx.writeAndFlush(response);
+//        }, 100, TimeUnit.MILLISECONDS);
+
+        runtime = Runtime.getRuntime();
+        totalMem = runtime.totalMemory();
+        freeMem = runtime.freeMemory();
+        usedMem = totalMem - freeMem;
+        maxMem = runtime.maxMemory();
+        format = NumberFormat.getInstance();
+        System.out.println("end Max Memory:   " + format.format(maxMem / (1024.0 * 1024.0)));
+        System.out.println("end Used Memory:  " + format.format(usedMem / (1024.0 * 1024.0)));
     }
 
     public static class Person {
