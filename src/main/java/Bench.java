@@ -7,6 +7,7 @@ public class Bench {
     private static final int RUNS       = 1000;     // 計測回数
     private static final int CHUNK_CNT  = 50_000;  // 生成バッファ数
     private static final int CHUNK_SIZE = 1_024;   // 1 バッファのサイズ
+    private static final int ARR_LEN   = 128;
 
     /*----------------- heavy part -----------------*/
     private static String buildLargeResponse() {
@@ -22,13 +23,30 @@ public class Bench {
         // 実際は CSV 解析や I/O など
     }
 
+    static class Item {
+        long[] data = new long[ARR_LEN];               // 128 * 8 byte
+    }
+
+    /*------------ heavy part ----------------------*/
+    private static long buildLargeResponseItem() {
+        long total = 0;
+        for (int i = 0; i < CHUNK_CNT; i++) {
+            Item it = new Item();                      // ヒープ確保
+            for (int j = 0; j < ARR_LEN; j++) {
+                it.data[j] = j;                        // ダミー書き込み
+            }
+            total += it.data[0];
+        }
+        return total;
+    }
+
     /*----------------- benchmark ------------------*/
     public static void main(String[] args) {
         double total = 0.0;
 
         for (int i = 1; i <= RUNS; i++) {
             long start = System.nanoTime();
-            String res = buildLargeResponse();
+            long res = buildLargeResponseItem();
             double sec = (System.nanoTime() - start) / 1_000_000_000.0;
             total += sec;
             System.out.printf("Run %3d: %.6f seconds (%s)%n", i, sec, res);
