@@ -1,5 +1,0 @@
-FROM gradle:jdk21
-COPY . ./
-#RUN ./gradlew installDist
-EXPOSE 8081
-CMD ["java", "-XX:+UseG1GC","-Xlog:gc*:stdout", "src/main/java/Bench.java", ""]
